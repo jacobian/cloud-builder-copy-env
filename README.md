@@ -26,8 +26,8 @@ So here's this dingus. It'll copy env vars from a Cloud Run service into an env 
    export SERVICE_ACCOUNT="${PROJECT_NUMBER@cloudbuild.gserviceaccount.com"
 
    gcloud projects add-iam-policy-binding ${PROJECT_ID} \
-                   --member serviceAccount:$SERVICE_ACCOUNT \
-                   --role roles/run.admin
+     --member serviceAccount:$SERVICE_ACCOUNT \
+     --role roles/run.admin
    ```
 
    NB: you may also want to add `roles/cloudsql.client` while you're at it, as if you're using this for the common database migration use case, you'll need that permission later too.
@@ -39,8 +39,14 @@ So here's this dingus. It'll copy env vars from a Cloud Run service into an env 
    ```yaml
      - id: copyenv
        name: gcr.io/$PROJECT_ID/copyenv
-       args: [your-service-name]
+       args: [--service, your-service-name]
    ```
+
+   This takes some optional arguments:
+    
+    * `--region` (default: `us-central`)
+    * `--platform` (default: `managed`)
+    * `--dest` (default: `/workspace.env`)
 
 This will write all your secrets to `/workspace/.env`, which is automatically persisted between build steps. So subsequent build steps can read from there and pick up all your config. 
 
@@ -63,7 +69,7 @@ And I make sure that my migration build step looks like:
       - -i
       - gcr.io/$PROJECT_ID/my-service-name
       - -e
-      - ENV_FILE=/workspace/.env  # <-- 👀 this is the important line
+      - ENV_FILE=/workspace/.env  # <- 👀 this is the important line
       - --
       - sh
       - release.sh
